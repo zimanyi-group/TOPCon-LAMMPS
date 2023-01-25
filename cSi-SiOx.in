@@ -1,0 +1,106 @@
+# This script is used to create an SiOx sample With a 4x4x4 sim box using the a-Quartz unit cell
+#SiO2 has a mass density of 2.65 g/cm^3
+#Si has a mass density of 2.4 g/cm^3
+
+#For a 4x4x4 sim box I get 1152 total atoms with 384 Si and 768 O with m:O~.5*m:Si I get M~768 m:Si
+#This results in the following fomula for SiOx for a 4x4x4 sim box 
+#
+#======= N = 768 / (1 + x/2); for p = 2.65 g/cm^3=============
+
+#========2.4/2.65 = 0.91===================
+clear
+units         real
+dimension     3
+boundary    p p p
+atom_style  charge
+
+variable dt equal 0.5
+#====================================================
+lattice diamond 5.43
+region box block 0 5 0 5 0 6 units lattice
+region crystal block 0 5 0 5 0 3 units lattice
+region siox block 0 5 0 5 3 5.95 units lattice
+create_box 3 box
+
+create_atoms 1 region crystal
+group cSi region crystal
+region lock block EDGE EDGE EDGE EDGE EDGE 1 units lattice
+group anchor region lock
+
+create_atoms 1 random ${nsi} $(v_rand) siox
+create_atoms 2 random ${nox} $(v_rand +1) siox
+group SiOx region siox
+
+
+mass 1 28.0855
+mass 2 15.9994
+mass 3 1.008
+
+
+
+group Si type 1
+group ox type 2
+group aSi subtract Si cSi 
+
+
+# ----------Define interatomic potential --------------
+pair_style	    reaxff ./topcon.control
+pair_coeff	    * * /home/amdiggs/LAMMPS/lammps-23Jun2022/potentials/ffield_Nayir_SiO_2019.reax Si O H
+
+
+neighbor        2.0 bin
+neigh_modify    delay 10 check yes
+
+
+timestep ${dt}
+thermo 1000
+thermo_style custom step temp density
+thermo_modify lost ignore
+
+fix r1 all qeq/reax 10 0.0 10.0 1e-3 reaxff
+
+delete_atoms overlap 1.5 SiOx cSi
+delete_atoms overlap 1.3 ox aSi
+
+variable Nsi equal count(aSi)
+variable Nox equal count(ox)
+variable rat equal $( v_Nox / v_Nsi)
+
+min_style hftn
+
+dump d1 all atom 10000 pinhole-$(v_rat:%.2f).dump
+
+velocity SiOx create 1800.0 9872567 mom yes rot no dist gaussian
+run 0
+
+fix h1 SiOx nvt temp 1800.0 1800.0 $(100.0 * dt)
+run 10000
+unfix h1
+timestep 1.0
+
+fix h2 SiOx nvt temp 1800.0 1800.0 $(100.0 * dt)
+run 25000
+unfix h2
+
+group mobile subtract all anchor
+
+fix relax mobile nvt temp 1800.0 1000.0 $(100.0 * dt)
+run 100000
+unfix relax
+
+
+write_data npt-restart-$(v_Nsi).dat
+
+fix set mobile npt temp 1000.0 300.0 $(100.0 * dt) iso 1.0 1.0 100.0 drag 2.0 mtk yes
+run 500000
+unfix set
+
+
+minimize 1.0e-5 1.0e-5 100000 100000
+
+write_dump all atom siox-$(v_rat:%.2f)-interface.dump
+write_data SiOx-$(v_rat:%.2f)-interface.dat
+print $(v_Nsi)
+print $(v_Nox)
+
+
