@@ -1,0 +1,59 @@
+# This script is used to create an SiOx sample With a 4x4x4 sim box using the a-Quartz unit cell
+#SiO2 has a mass density of 2.65 g/cm^3
+#Si has a mass density of 2.4 g/cm^3
+
+#For a 4x4x4 sim box I get 1152 total atoms with 384 Si and 768 O with m:O~.5*m:Si I get M~768 m:Si
+#This results in the following fomula for SiOx for a 4x4x4 sim box 
+#
+#======= N = 768 / (1 + x/2); for p = 2.65 g/cm^3=============
+
+#========2.4/2.65 = 0.91===================
+clear
+units         real
+dimension     3
+boundary    p p p
+atom_style  charge
+
+variable dt equal 0.5
+#====================================================
+read_data ${datfile}
+ 
+
+
+# ----------Define interatomic potential --------------
+pair_style	    reaxff ./topcon.control
+pair_coeff	    * * /home/amdiggs/LAMMPS/lammps-23Jun2022/potentials/ffield_Nayir_SiO_2019.reax Si O H
+
+
+neighbor        2.0 bin
+neigh_modify    delay 10 check yes
+
+
+timestep ${dt}
+thermo 1000
+thermo_style custom step temp density
+thermo_modify lost ignore
+
+fix r1 all qeq/reax 10 0.0 10.0 1e-3 reaxff
+
+
+
+dump d1 all atom 5000 npt-r-${nsi}.dump
+
+timestep 1.0
+
+
+region lock block EDGE EDGE EDGE EDGE 1.0 1.5 units lattice
+group anchor region lock
+group mobile subtract all anchor
+
+fix set mobile npt temp 1000.0 300.0 $(100.0 * dt) iso 0.0 0.0 100.0 drag 1.0 mtk yes
+run 500000
+unfix set
+
+
+minimize 1.0e-5 1.0e-5 100000 100000
+
+write_data npt-r-${nsi}.dat
+
+

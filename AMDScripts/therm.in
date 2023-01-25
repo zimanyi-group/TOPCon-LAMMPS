@@ -1,0 +1,69 @@
+# This script is used to create an SiOx sample With a 4x4x4 sim box using the a-Quartz unit cell
+#SiO2 has a mass density of 2.65 g/cm^3
+#Si has a mass density of 2.4 g/cm^3
+
+#For a 4x4x4 sim box I get 1152 total atoms with 384 Si and 768 O with m:O~.5*m:Si I get M~768 m:Si
+#This results in the following fomula for SiOx for a 4x4x4 sim box 
+#
+#======= N = 768 / (1 + x/2); for p = 2.65 g/cm^3=============
+
+#========2.4/2.65 = 0.91===================
+clear
+units         real
+dimension     3
+boundary    p p p
+atom_style  charge
+
+variable dt equal 1.5
+#====================================================
+lattice diamond 5.43
+
+read_data ${datfile}
+replicate 2 2 1
+
+region anchor block EDGE EDGE EDGE EDGE 1 2 units lattice
+group frozen region anchor
+group mobile subtract all frozen  
+
+ 
+
+
+# ----------Define interatomic potential --------------
+pair_style	    reaxff ./topcon.control
+pair_coeff	    * * /home/amdiggs/LAMMPS/lammps-23Jun2022/potentials/ffield_Nayir_SiO_2019.reax Si O H
+
+
+neighbor        2.0 bin
+neigh_modify    delay 10 check yes
+
+
+timestep ${dt}
+thermo 1000
+thermo_style custom step temp density
+thermo_modify lost ignore
+
+min_style cg
+
+fix r1 all qeq/reax 10 0.0 10.0 1e-3 reaxff
+run 0
+
+minimize 1.0e-3 1.0e-3 10000 10000
+
+dump d1 all atom 10000 sep-${ratio}.dump
+
+velocity mobile create 1500.0 9872567 mom yes rot no dist gaussian
+
+fix h1 mobile nvt temp 1500.0 1500.0 $(100.0 * dt)
+run 500000
+unfix h1
+
+fix h2 mobile nvt temp 1500.0 300.0 $(100.0 * dt)
+run 500000
+unfix h2
+
+
+minimize 1.0e-5 1.0e-5 100000 100000
+
+write_data sep-${ratio}.dat
+
+
