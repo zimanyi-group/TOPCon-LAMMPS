@@ -1,1 +1,1 @@
-# TOPCon-LAMMPS
+# TOPCon-LAMMPS test
