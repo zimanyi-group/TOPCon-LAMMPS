@@ -5,7 +5,10 @@ import pdb
 import numpy as np
 
 
-
+def scaledFileName(file,a):
+    id=file.index('.data')
+    outfile = file[:id] + "_"+str(int(a*100)) + file[id:]
+    return outfile
 
 def Replicate(sim, x,y,z):
     new_sim = rl.Simulation
@@ -41,58 +44,62 @@ def Replicate(sim, x,y,z):
 
 def Stack_Samples(arr_of_file_names, slice_width):
     sim_container = []
+    
     for file in arr_of_file_names:
-        sim_container.append(rl.Read_Dat(file))
-    corr_offset = 0.0
+        sim_container.append(rl.Read_Data(file))
+    curr_offset = 0.0
     count = 1
+    at_list=[]
     for sim in sim_container:
+        szl=sim.box[2,0]#the current sim's zlo/zhi
+        szh=sim.box[2,1]
         for at in sim.atoms:
-            if (at.z < slice_width):
-                at_list.append(atom.ATOM([count, at.type, at.x, at.y, at.z + curr_offset]))
+            zcoord=at.z-szl
+            if (zcoord < slice_width):
+
+                at_list.append(atom.ATOM([count, at.type,at.q, at.x, at.y, zcoord + curr_offset]))
+
                 count +=1
         curr_offset += slice_width
-    new_sim = Simulation()
+    new_sim = rl.Simulation()
+    
+    #print(sim_container[1].box)
+    new_sim.box=sim_container[0].box
+    new_sim.box[2,0]=0
+    new_sim.box[2,1]=curr_offset
+    
     new_sim.timestep = 0
     new_sim.num = count -1
-    new_sim
-    rl.Write_Data
-    return
+    new_sim.atoms=at_list
+
+    return new_sim
 
 
 def main():
-    test_file = "/Users/diggs/Desktop/LAMMPS/DATA/a-Si-H-12/aSi-H_optimize_8.dat"
-    Out_Dir = "/Users/diggs/Desktop/TOPCon/CreateStacks/aSiH/"
-    test = rl.Read_Data(test_file)
-    print(test.timestep)
-    print(test.box)
-    print(test.num)
-    Replicate(test, 5*5.43, 5*5.43, 0.0)
-    print(test.box)
-    print(test.num)
-    dirs= test_file.split('/')
-    Fname = dirs[len(dirs) - 1]
-    rl.Write_Dump(Out_Dir + Fname[:-3] + "dump", test)
+    folderpath = "/home/agoga/topcon/data/aSiOxSlices15/"
+    Out_Dir = "/home/agoga/topcon/MD-Analyze/output/"
+    
+    offsets=[0,0,0,0,0]
+    folders=[]
+
+
+    scale=.25
+       
+    files=['a-SiOx_1-1.data','a-SiOx_1-3.data','a-SiOx_1-5.data','a-SiOx_1-6.data','a-SiOx_1-8.data']
+
+    for f in files:
+        #folders.append('output-farm/with-v-without-h-SiO_1-5/'+f)
+        #folders.append(scaledFileName(folderpath+f,scale))
+        folders.append(folderpath+f)
+            
+    sim = Stack_Samples(folders,5)
+    
+    #print(sim.atoms[0].q)
+    dirs= folderpath.split('/')
+    Fname = dirs[len(dirs) - 2]
+    rl.Write_Data_WQ(Out_Dir + Fname[:-3] + ".data", sim)
 
 
 
 if __name__ == '__main__':
-    #main()
-    import matplotlib.font_manager
-    fpaths = matplotlib.font_manager.findSystemFonts()
-
-    for i in fpaths:
-        f = matplotlib.font_manager.get_font(i)
-        print(f.family_name)
-
-
-
-
-
-
-
-
-
-
-
-
-
+    main()

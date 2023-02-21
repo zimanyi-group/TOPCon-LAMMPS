@@ -74,11 +74,13 @@ class ATOM():
     def __init__(self, vals):
         self.id = vals[0]
         self.type = vals[1]
-        self.x = vals[2]
-        self.y = vals[3]
-        self.z = vals[4]
+        self.q = vals[2]
+        self.x = vals[3]
+        self.y = vals[4]
+        self.z = vals[5]
+        
         self.neighbors = []
-        self.initial=np.array([vals[2], vals[3], vals[4]])
+        self.initial=np.array([vals[3], vals[4], vals[5]])
         self.crystal = True
     
     @property

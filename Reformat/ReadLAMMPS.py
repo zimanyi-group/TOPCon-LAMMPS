@@ -18,7 +18,7 @@ ATOMS=re.compile('ITEM: ATOMS id type xs ys zs')
 
 DatNum = re.compile(r'\d+\s+atoms')
 DatTypes = re.compile(r'\d\s+atom types')
-DatBox = re.compile(r'\d+\s+\d+\.\d+\s+[x-z]lo [x-z]hi')
+DatBox = re.compile(r'(\d|\d+\.\d)+\s+(\d|\d+\.\d)+\s+[x-z]lo [x-z]hi')
 DatBoxx = re.compile(r'\d+\.\d+\s+\d+\.\d+\s+xlo xhi')
 DatBoxy = re.compile(r'\d+\.\d+\s+\d+\.\d+\s+ylo yhi')
 DatBoxz = re.compile(r'\d+\.\d+\s+\d+\.\d+\s+zlo zhi')
@@ -89,6 +89,7 @@ class Simulation():
 
     def set_BB_Dat(self, line):
         v = line.split()
+
         Box_Dict[v[2]] = float(v[0])
         Box_Dict[v[3]] = float(v[1])
         Box_Dict['count']+=1
@@ -106,7 +107,7 @@ class Simulation():
         s = [1.0, 1.0, 1.0]
         l=line.split()
         if(charge):
-            x=[int(l[0]),int(l[1]),float(l[3])*s[0],float(l[4])*s[1],float(l[5])*s[2]]
+            x=[int(l[0]),int(l[1]),float(l[2]),float(l[3])*s[0],float(l[4])*s[1],float(l[5])*s[2]]
         else:
             x=[int(l[0]),int(l[1]),float(l[2])*s[0],float(l[3])*s[1],float(l[4])*s[2]]
         self.atoms[x[0]- 1]=atom.ATOM(x)
@@ -343,7 +344,7 @@ def Write_Data(in_file,Ens):
 
 
 def Write_Data_WQ(file_name,Ens):
-    Out = open(in_file[:-4]+"dat", 'w')
+    Out = open(file_name[:-4]+"dat", 'w')
     Head = "LAMMPS data file via write_data, version 29 Sep 2021, timestep = {0:.0f}\n".format(Ens.timestep)
     Num = "{0:.0f} atoms\n".format(Ens.num)
     Typs = "3 atom types\n"
@@ -366,7 +367,7 @@ def Write_Data_WQ(file_name,Ens):
     Out.write("Atoms # charge\n")
     Out.write("\n")
     for at in Ens.atoms:
-        Out.write(Atoms.format(at.id, at.type, at.charge, *at.coords))
+        Out.write(Atoms.format(at.id, at.type, at.q, *at.coords))
     Out.write("\n")
     Out.write("Velocities\n")
     Out.write("\n")
