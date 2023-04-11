@@ -98,7 +98,9 @@ def Stack_Samples(arr_of_file_names, slice_width):
     return new_sim
 
 
-def Slice_Dump(dump,atom,outfile):
+def Slice_Dump(dump,ts,atom,outfile):
+    sim=rl.Read_Dump(dump)
+    sim.timestep=10000
     
 
 def main():
