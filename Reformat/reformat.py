@@ -41,7 +41,30 @@ def Replicate(sim, x,y,z):
 # 2) create a container of atoms.
 # 3) loop through each sim and add only atoms that have a z coord in a particular range.
 # 4) write a datafile fro those atoms.
+#
+######## Stack samples Main()
+# folderpath = "/home/agoga/topcon/data/aSiOxSlices15/"
+#     Out_Dir = "/home/agoga/topcon/MD-Analyze/output/"
+    
+#     offsets=[0,0,0,0,0]
+#     folders=[]
 
+
+#     scale=.25
+       
+#     files=['a-SiOx_1-1.data','a-SiOx_1-3.data','a-SiOx_1-5.data','a-SiOx_1-6.data','a-SiOx_1-8.data']
+
+#     for f in files:
+#         #folders.append('output-farm/with-v-without-h-SiO_1-5/'+f)
+#         #folders.append(scaledFileName(folderpath+f,scale))
+#         folders.append(folderpath+f)
+            
+#     sim = Stack_Samples(folders,5)
+    
+#     #print(sim.atoms[0].q)
+#     dirs= folderpath.split('/')
+#     Fname = dirs[len(dirs) - 2]
+#     rl.Write_Data_WQ(Out_Dir + Fname[:-3] + ".data", sim)
 def Stack_Samples(arr_of_file_names, slice_width):
     sim_container = []
     
@@ -74,6 +97,9 @@ def Stack_Samples(arr_of_file_names, slice_width):
 
     return new_sim
 
+
+def Slice_Dump(dump,atom,outfile):
+    
 
 def main():
     folderpath = "/home/agoga/topcon/data/aSiOxSlices15/"
